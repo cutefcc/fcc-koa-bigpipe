@@ -30,6 +30,8 @@ server.get("/", async (ctx, next) => {
   //   const stream = fs.createReadStream(filename);
   // 非常简单的一种bigpipe
   const file = fs.readFileSync(resolve(join(__dirname, "index.html")));
+  ctx.status = 200;
+  ctx.type = "html";
   ctx.res.write(file);
   ctx.res.end();
 });
