@@ -26,14 +26,85 @@ server.get("/test", async (ctx, next) => {
 });
 
 server.get("/", async (ctx, next) => {
+  ///////////////////////////////////////////////
+  // 两个task 模拟我们的异步任务
+  const task1 = function () {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        resolve(`<script>addHtml('part1', '第一次传输<br />')</script>`);
+      }, 2000);
+    });
+  };
+  const task2 = function () {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        resolve(`<script>addHtml('part2', '第二次传输<br />')</script>`);
+      }, 3000);
+    });
+  };
+  ///////////////////////////////////////////////demo1 非常简单的一种bigpipe
+  //   const file = fs.readFileSync(resolve(join(__dirname, "index.html")));
+  //   ctx.status = 200;
+  //   ctx.type = "html";
+  //   ctx.res.write(file);
+  //   ctx.res.end();
+  ///////////////////////////////////////////////demo2 比较常见的一种bigpipe 但是这种方式会导致页面的闪烁
+  //   ctx.status = 200;
+  //   ctx.type = "html";
   //   const filename = resolve(join(__dirname, "index.html"));
-  //   const stream = fs.createReadStream(filename);
-  // 非常简单的一种bigpipe
+
+  //   function createSsrStreamPromise() {
+  //     return new Promise((resolve, reject) => {
+  //       const stream = fs.createReadStream(filename);
+  //       stream.on("error", reject).pipe(ctx.res);
+  //     });
+  //   }
+  //   await createSsrStreamPromise();
+  ///////////////////////////////////////////////demo3 stream.on("data") 一点点读取
+  //   ctx.status = 200;
+  //   ctx.type = "html";
+  //   const filename = resolve(join(__dirname, "index.html"));
+
+  //   function createSsrStreamPromise() {
+  //     return new Promise((resolve, reject) => {
+  //       const stream = fs.createReadStream(filename);
+  //       stream
+  //         .on("data", (chunk) => {
+  //           ctx.res.write(chunk);
+  //         })
+  //         .on("end", () => {
+  //           ctx.res.end();
+  //         });
+  //     });
+  //   }
+  //   await createSsrStreamPromise();
+  ///////////////////////////////////////////////demo4 MPA 该同步的同步，该异步的异步，解决MPA过大问题
   const file = fs.readFileSync(resolve(join(__dirname, "index.html")));
   ctx.status = 200;
   ctx.type = "html";
   ctx.res.write(file);
+
+  const res1 = await task1();
+  ctx.res.write(res1);
+  const res2 = await task2();
+  ctx.res.write(res2);
   ctx.res.end();
+  ///////////////////////////////////////////////demo5
+  // 如果是经过了前端模板的 render 的 -- html
+  //   function createSsrStreamPromise() {
+  //     return new Promise((resolve, reject) => {
+  //       const htmlStream = new Readable();
+  //       htmlStream.push(html);
+  //       htmlStream.push(null);
+  //       htmlStream
+  //         .on("error", (err) => {
+  //           reject(err);
+  //         })
+  //         .pipe(ctx.res);
+  //     });
+  //   }
+
+  //   await createSsrStreamPromise();
 });
 
 app.use(server.routes()).use(server.allowedMethods());

@@ -27,3 +27,20 @@ server.get("/", async (ctx, next) => {
   ctx.res.end();
 });
 ```
+
+- 第二种 bigpipe
+
+```
+   demo2 比较常见的一种bigpipe 但是这种方式会导致页面的闪烁
+     ctx.status = 200;
+     ctx.type = "html";
+     const filename = resolve(join(__dirname, "index.html"));
+
+     function createSsrStreamPromise() {
+       return new Promise((resolve, reject) => {
+         const stream = fs.createReadStream(filename);
+         stream.on("error", reject).pipe(ctx.res);
+       });
+     }
+     await createSsrStreamPromise();
+```
